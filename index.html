@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Vue</title>
+</head>
+
+<body>
+  <div id="msg"></div>
+</body>
+<script>
+
+
+  const data = { ok: true, text: 123 }
+  const el = document.getElementById('msg')
+
+  const bucket = new WeakMap()
+
+  let activeEffect
+
+  const effect = (fn) => {
+    activeEffect = fn
+    fn()
+  }
+
+  const track = (target, key) => {
+    if (!activeEffect) return
+
+    let despMap = bucket.get(target)
+    if (!despMap) {
+      bucket.set(target, (despMap = new Map()))
+    }
+
+    let deps = despMap.get(key)
+    if (!deps) {
+      despMap.set(key, (deps = new Set()))
+    }
+
+    deps.add(activeEffect)
+  }
+
+  const trigger = (target, key) => {
+    const despMap = bucket.get(target)
+    if (!despMap) return
+
+    const effects = despMap.get(key)
+
+    effects && effects.forEach(fn => fn())
+  }
+
+  const proxy = new Proxy(data, {
+    get(target, key) {
+      track(target, key)
+
+      return target[key]
+    },
+    set(target, key, newVal) {
+      target[key] = newVal
+      trigger(target, key)
+    }
+  })
+
+  effect(() => {
+    console.log('effect run')
+    // el.innerText = proxy.text
+    el.innerText = proxy.ok ? proxy.text : 'not'
+  })
+
+  setTimeout(() => {
+    console.log(111)
+    proxy.ok = false
+  }, 1000)
+  setTimeout(() => {
+    console.log(111)
+    proxy.text = 'hello'
+  }, 2000);
+
+</script>
+
+</html>
