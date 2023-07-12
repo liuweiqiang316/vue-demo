@@ -21,9 +21,22 @@
 
   let activeEffect
 
+  const cleanup = (effectFn) => {
+    for (let i = 0; i < effectFn.deps.length; i++) {
+      const deps = effectFn.deps[i]
+      deps.delete(effectFn)
+    }
+    effectFn.deps.length = 0
+  }
+
   const effect = (fn) => {
-    activeEffect = fn
-    fn()
+    const effectFn = () => {
+      cleanup(effectFn)
+      activeEffect = effectFn
+      fn()
+    }
+    effectFn.deps = []
+    effectFn()
   }
 
   const track = (target, key) => {
@@ -40,6 +53,7 @@
     }
 
     deps.add(activeEffect)
+    activeEffect.deps.push(deps)
   }
 
   const trigger = (target, key) => {
@@ -48,7 +62,9 @@
 
     const effects = despMap.get(key)
 
-    effects && effects.forEach(fn => fn())
+    const effectsToRun = new Set(effects)
+
+    effectsToRun.forEach(fn => fn())
   }
 
   const proxy = new Proxy(data, {
