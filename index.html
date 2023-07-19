@@ -66,7 +66,14 @@
 
     const effects = despMap.get(key)
 
-    const effectsToRun = new Set(effects)
+    const effectsToRun = new Set()
+
+    effects && effects.forEach(effectFn => {
+      if (effectFn !== activeEffect) {
+        effectsToRun.add(effectFn)
+      }
+    })
+
 
     effectsToRun.forEach(fn => fn())
   }
@@ -75,7 +82,7 @@
    * 调用示例
   */
 
-  const data = { ok: true, text: 123 }
+  const data = { foo: 1 }
 
   const proxy = new Proxy(data, {
     get(target, key) {
@@ -89,17 +96,10 @@
     }
   })
 
-  let t1, t2
-  effect(function effectFn1() {
-    console.log('effectFn1 执行')
-    effect(function effectFn2() {
-      console.log('effectFn2 执行')
-      t2 = proxy.text
-    })
-    t1 = proxy.ok
+  effect(() => {
+    proxy.foo++
   })
 
-  proxy.ok = false
 
 </script>
 
