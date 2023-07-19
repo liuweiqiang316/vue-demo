@@ -11,82 +11,8 @@
 <body>
   <div id="msg"></div>
 </body>
-<script>
-  /**
-   * 准备工作
-  */
-
-  const bucket = new WeakMap()
-
-  const cleanup = (effectFn) => {
-    for (let i = 0; i < effectFn.deps.length; i++) {
-      const deps = effectFn.deps[i]
-      deps.delete(effectFn)
-    }
-    effectFn.deps.length = 0
-  }
-
-  let activeEffect
-  // effect 栈
-  const effectStack = []
-
-  const effect = (fn, options = {}) => {
-    const effectFn = () => {
-      cleanup(effectFn)
-      activeEffect = effectFn
-      effectStack.push(effectFn)
-      fn()
-      effectStack.pop()
-      activeEffect = effectStack[effectStack.length - 1]
-    }
-    effectFn.options = options
-    effectFn.deps = []
-    effectFn()
-  }
-
-  const track = (target, key) => {
-    if (!activeEffect) return
-
-    let despMap = bucket.get(target)
-    if (!despMap) {
-      bucket.set(target, (despMap = new Map()))
-    }
-
-    let deps = despMap.get(key)
-    if (!deps) {
-      despMap.set(key, (deps = new Set()))
-    }
-
-    deps.add(activeEffect)
-    activeEffect.deps.push(deps)
-  }
-
-  const trigger = (target, key) => {
-    const despMap = bucket.get(target)
-    if (!despMap) return
-
-    const effects = despMap.get(key)
-
-    const effectsToRun = new Set()
-
-    effects && effects.forEach(effectFn => {
-      if (effectFn !== activeEffect) {
-        effectsToRun.add(effectFn)
-      }
-    })
-
-    effectsToRun.forEach(effectFn => {
-      if (effectFn.options.scheduler) {
-        effectFn.options.scheduler(effectFn)
-      } else {
-        effectFn()
-      }
-    })
-  }
-
-  /**
-   * 调用示例
-  */
+<script type="module">
+  import { effect, track, trigger } from "./src/main.js"
 
   const data = { foo: 1 }
 
@@ -99,19 +25,37 @@
     set(target, key, newVal) {
       target[key] = newVal
       trigger(target, key)
+      return true
     }
   })
+
+
+  const jobQueue = new Set()
+  const p = Promise.resolve()
+
+  let isFlushing = false
+
+  function flushJob() {
+    if (isFlushing) return
+    isFlushing = true
+    p.then(() => {
+      jobQueue.forEach(job => job())
+    }).finally(() => {
+      isFlushing = false
+    })
+  }
 
   effect(() => {
     console.log(proxy.foo)
   }, {
     scheduler(fn) {
-      setTimeout(() => {
-        fn()
-      }, 0)
+      jobQueue.add(fn)
+      flushJob()
     }
   })
 
+  proxy.foo++
+  proxy.foo++
   proxy.foo++
 
   console.log('结束了');
