@@ -30,7 +30,7 @@
   // effect 栈
   const effectStack = []
 
-  const effect = (fn) => {
+  const effect = (fn, options = {}) => {
     const effectFn = () => {
       cleanup(effectFn)
       activeEffect = effectFn
@@ -39,6 +39,7 @@
       effectStack.pop()
       activeEffect = effectStack[effectStack.length - 1]
     }
+    effectFn.options = options
     effectFn.deps = []
     effectFn()
   }
@@ -74,8 +75,13 @@
       }
     })
 
-
-    effectsToRun.forEach(fn => fn())
+    effectsToRun.forEach(effectFn => {
+      if (effectFn.options.scheduler) {
+        effectFn.options.scheduler(effectFn)
+      } else {
+        effectFn()
+      }
+    })
   }
 
   /**
@@ -97,10 +103,18 @@
   })
 
   effect(() => {
-    proxy.foo++
+    console.log(proxy.foo)
+  }, {
+    scheduler(fn) {
+      setTimeout(() => {
+        fn()
+      }, 0)
+    }
   })
 
+  proxy.foo++
 
+  console.log('结束了');
 </script>
 
 </html>
