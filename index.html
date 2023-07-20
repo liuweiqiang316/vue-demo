@@ -12,9 +12,9 @@
   <div id="msg"></div>
 </body>
 <script type="module">
-  import { effect, track, trigger } from "./src/main.js"
+  import { effect, track, trigger, computed } from "./src/main.js"
 
-  const data = { foo: 1 }
+  const data = { foo: 1, bar: 2 }
 
   const proxy = new Proxy(data, {
     get(target, key) {
@@ -54,11 +54,13 @@
     }
   })
 
-  proxy.foo++
-  proxy.foo++
+  const sumRes = computed(() => proxy.foo + proxy.bar)
+  effect(() => {
+    console.log(111, sumRes.value)
+  })
+
   proxy.foo++
 
-  console.log('结束了');
 </script>
 
 </html>
