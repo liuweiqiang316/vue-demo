@@ -61,6 +61,8 @@
 
   watch(() => proxy.foo, (v, prev) => {
     console.log('watch', v, prev)
+  }, {
+    immediate: true
   })
 
   proxy.foo++

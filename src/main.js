@@ -110,7 +110,7 @@ const traverse = (value, seen = new Set()) => {
   }
 };
 
-export const watch = (source, cb) => {
+export const watch = (source, cb, options = {}) => {
   let getter;
   if (typeof source === "function") {
     getter = source;
@@ -120,14 +120,27 @@ export const watch = (source, cb) => {
 
   let oldValue, newValue;
 
+  const job = () => {
+    newValue = effectFn();
+    cb(newValue, oldValue);
+    oldValue = newValue;
+  };
+
   const effectFn = effect(() => getter(), {
     lazy: true,
     scheduler() {
-      newValue = effectFn();
-      cb(newValue, oldValue);
-      oldValue = newValue;
+      if (options.flush === "post") {
+        const p = Promise.resolve();
+        p.then(job);
+      } else {
+        job();
+      }
     },
   });
 
-  oldValue = effectFn();
+  if (options.immediate) {
+    job();
+  } else {
+    oldValue = effectFn();
+  }
 };
