@@ -119,10 +119,17 @@ export const watch = (source, cb, options = {}) => {
   }
 
   let oldValue, newValue;
+  let cleanup;
+  const onInvalidate = (fn) => {
+    cleanup = fn;
+  };
 
   const job = () => {
     newValue = effectFn();
-    cb(newValue, oldValue);
+    if (cleanup) {
+      cleanup();
+    }
+    cb(newValue, oldValue, onInvalidate);
     oldValue = newValue;
   };
 

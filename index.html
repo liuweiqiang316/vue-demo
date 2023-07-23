@@ -65,7 +65,31 @@
     immediate: true
   })
 
+  let finalData
+  watch(() => proxy.foo, async (v, prev, onInvalidate) => {
+    let expired = false
+    onInvalidate(() => {
+      expired = true
+    })
+
+    const res = await new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(v)
+      }, 1000)
+    })
+
+    if (!expired) {
+      finalData = res
+    }
+
+    console.log('finalData', finalData)
+
+  })
+
   proxy.foo++
+  setTimeout(() => {
+    proxy.foo++
+  }, 200);
 
 </script>
 
