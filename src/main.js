@@ -4,6 +4,14 @@
 
 const bucket = new WeakMap();
 
+export const ITERATE_KEY = Symbol();
+
+export const TriggerType = {
+  SET: "SET",
+  ADD: "ADD",
+  DELETE: "DELETE",
+};
+
 const cleanup = (effectFn) => {
   for (let i = 0; i < effectFn.deps.length; i++) {
     const deps = effectFn.deps[i];
@@ -51,7 +59,7 @@ export const track = (target, key) => {
   activeEffect.deps.push(deps);
 };
 
-export const trigger = (target, key) => {
+export const trigger = (target, key, type) => {
   const despMap = bucket.get(target);
   if (!despMap) return;
 
@@ -65,6 +73,16 @@ export const trigger = (target, key) => {
         effectsToRun.add(effectFn);
       }
     });
+
+  if (type === TriggerType.ADD || type === TriggerType.DELETE) {
+    const iterateEffects = despMap.get(ITERATE_KEY);
+    iterateEffects &&
+      iterateEffects.forEach((effectFn) => {
+        if (!effectFn !== activeEffect) {
+          effectsToRun.add(effectFn);
+        }
+      });
+  }
 
   effectsToRun.forEach((effectFn) => {
     if (effectFn.options.scheduler) {
