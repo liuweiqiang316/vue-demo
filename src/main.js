@@ -170,7 +170,7 @@ export const watch = (source, cb, options = {}) => {
   }
 };
 
-export const reactive = (obj) => {
+const createReactive = (obj, isShallow = false) => {
   return new Proxy(obj, {
     get(target, key, receiver) {
       if (key === "raw") {
@@ -178,7 +178,14 @@ export const reactive = (obj) => {
       }
       track(target, key);
 
-      return Reflect.get(target, key, receiver);
+      const res = Reflect.get(target, key, receiver);
+      if (isShallow) return res;
+
+      if (typeof res === "object" && res !== null) {
+        return reactive(res);
+      }
+
+      return res;
     },
     set(target, key, newVal, receiver) {
       const oldVal = target[key];
@@ -193,7 +200,7 @@ export const reactive = (obj) => {
           trigger(target, key, type);
         }
       }
-      
+
       return res;
     },
     deleteProperty(target, key) {
@@ -214,4 +221,12 @@ export const reactive = (obj) => {
       return Reflect.ownKeys(target);
     },
   });
+};
+
+export const reactive = (obj) => {
+  return createReactive(obj);
+};
+
+export const shallowReactive = (obj) => {
+  return createReactive(obj, true);
 };
