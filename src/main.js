@@ -170,24 +170,30 @@ export const watch = (source, cb, options = {}) => {
   }
 };
 
-const createReactive = (obj, isShallow = false) => {
+const createReactive = (obj, isShallow = false, isReadonly = false) => {
   return new Proxy(obj, {
     get(target, key, receiver) {
       if (key === "raw") {
         return target;
       }
-      track(target, key);
+      if (!isReadonly) {
+        track(target, key);
+      }
 
       const res = Reflect.get(target, key, receiver);
       if (isShallow) return res;
 
       if (typeof res === "object" && res !== null) {
-        return reactive(res);
+        return isReadonly ? readonly(res) : reactive(res);
       }
 
       return res;
     },
     set(target, key, newVal, receiver) {
+      if (isReadonly) {
+        console.warn(`属性 ${key} 是只读的`);
+        return true;
+      }
       const oldVal = target[key];
       const type = Object.prototype.hasOwnProperty.call(target, key)
         ? TriggerType.SET
@@ -204,6 +210,10 @@ const createReactive = (obj, isShallow = false) => {
       return res;
     },
     deleteProperty(target, key) {
+      if (isReadonly) {
+        console.warn(`属性 ${key} 是只读的`);
+        return true;
+      }
       const hadKey = Object.prototype.hasOwnProperty.call(target, key);
       const res = Reflect.deleteProperty(target, key);
       if (res && hadKey) {
@@ -229,4 +239,12 @@ export const reactive = (obj) => {
 
 export const shallowReactive = (obj) => {
   return createReactive(obj, true);
+};
+
+export const readonly = (obj) => {
+  return createReactive(obj, false, true);
+};
+
+export const shallowReadonly = (obj) => {
+  return createReactive(obj, true, true);
 };

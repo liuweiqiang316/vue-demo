@@ -12,16 +12,16 @@
   <div id="msg"></div>
 </body>
 <script type="module">
-  import { reactive, shallowReactive, effect, track, trigger, computed, watch, ITERATE_KEY, TriggerType } from "./src/main.js"
+  import { reactive, shallowReactive, readonly, shallowReadonly, effect, track, trigger, computed, watch, ITERATE_KEY, TriggerType } from "./src/main.js"
 
   const obj = { foo: { bar: 1 } }
-  const p = shallowReactive(obj)
+  const obj2 = { foo: { bar: 1 } }
+  const r1 = readonly(obj)
+  const r2 = shallowReadonly(obj2)
 
-  effect(() => {
-    console.log(p.foo.bar)
-  })
-
-  p.foo.bar = 2
+  r1.foo.bar = 2
+  r2.foo.bar = 2
+  console.log(r1, r2);
 </script>
 
 </html>
