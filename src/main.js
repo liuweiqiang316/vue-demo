@@ -169,3 +169,49 @@ export const watch = (source, cb, options = {}) => {
     oldValue = effectFn();
   }
 };
+
+export const reactive = (obj) => {
+  return new Proxy(obj, {
+    get(target, key, receiver) {
+      if (key === "raw") {
+        return target;
+      }
+      track(target, key);
+
+      return Reflect.get(target, key, receiver);
+    },
+    set(target, key, newVal, receiver) {
+      const oldVal = target[key];
+      const type = Object.prototype.hasOwnProperty.call(target, key)
+        ? TriggerType.SET
+        : TriggerType.ADD;
+      const res = Reflect.set(target, key, newVal, receiver);
+
+      // target === receiver.raw 说明 receiver 就是 target 的代理对象
+      if (target === receiver.raw) {
+        if (oldVal !== newVal && (oldVal === oldVal || newVal === newVal)) {
+          trigger(target, key, type);
+        }
+      }
+      
+      return res;
+    },
+    deleteProperty(target, key) {
+      const hadKey = Object.prototype.hasOwnProperty.call(target, key);
+      const res = Reflect.deleteProperty(target, key);
+      if (res && hadKey) {
+        trigger(target, key, TriggerType.DELETE);
+      }
+
+      return res;
+    },
+    has(target, key) {
+      track(target, key);
+      return Reflect.has(target, key);
+    },
+    ownKeys(target) {
+      track(target, ITERATE_KEY);
+      return Reflect.ownKeys(target);
+    },
+  });
+};

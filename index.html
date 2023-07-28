@@ -12,103 +12,21 @@
   <div id="msg"></div>
 </body>
 <script type="module">
-  import { effect, track, trigger, computed, watch, ITERATE_KEY, TriggerType } from "./src/main.js"
+  import { reactive, effect, track, trigger, computed, watch, ITERATE_KEY, TriggerType } from "./src/main.js"
 
-  const data = { foo: 1, bar: 2 }
+  const obj = {}
+  const proto = { bar: 1 }
+  const child = reactive(obj)
+  const parent = reactive(proto)
 
-  const proxy = new Proxy(data, {
-    get(target, key, receiver) {
-      track(target, key)
-
-      return Reflect.get(target, key, receiver)
-    },
-    set(target, key, newVal, receiver) {
-      const type = Object.prototype.hasOwnProperty.call(target, key) ? TriggerType.SET : TriggerType.ADD
-      const res = Reflect.set(target, key, newVal, receiver)
-      trigger(target, key, type)
-      return res
-    },
-    deleteProperty(target, key) {
-      const hadKey = Object.prototype.hasOwnProperty.call(target, key)
-      const res = Reflect.deleteProperty(target, key)
-      if (res && hadKey) {
-        trigger(target, key, TriggerType.DELETE)
-      }
-
-      return res
-    },
-    has(target, key) {
-      track(target, key)
-      return Reflect.has(target, key)
-    },
-    ownKeys(target) {
-      track(target, ITERATE_KEY)
-      return Reflect.ownKeys(target)
-    }
-  })
-
-
-  const jobQueue = new Set()
-  const p = Promise.resolve()
-
-  let isFlushing = false
-
-  function flushJob() {
-    if (isFlushing) return
-    isFlushing = true
-    p.then(() => {
-      jobQueue.forEach(job => job())
-    }).finally(() => {
-      isFlushing = false
-    })
-  }
+  // 使用 parent 作为 child 的原型
+  Object.setPrototypeOf(child, parent)
 
   effect(() => {
-    console.log(proxy.foo)
-  }, {
-    scheduler(fn) {
-      jobQueue.add(fn)
-      flushJob()
-    }
+    console.log(child.bar)
   })
 
-  const sumRes = computed(() => proxy.foo + proxy.bar)
-  effect(() => {
-    console.log(111, sumRes.value)
-  })
-
-  watch(() => proxy.foo, (v, prev) => {
-    console.log('watch', v, prev)
-  }, {
-    immediate: true
-  })
-
-  let finalData
-  watch(() => proxy.foo, async (v, prev, onInvalidate) => {
-    let expired = false
-    onInvalidate(() => {
-      expired = true
-    })
-
-    const res = await new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(v)
-      }, 1000)
-    })
-
-    if (!expired) {
-      finalData = res
-    }
-
-    console.log('finalData', finalData)
-
-  })
-
-  proxy.foo++
-  setTimeout(() => {
-    proxy.foo++
-  }, 200);
-
+  child.bar = 2
 </script>
 
 </html>
