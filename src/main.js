@@ -43,7 +43,7 @@ export const effect = (fn, options = {}) => {
 };
 
 export const track = (target, key) => {
-  if (!activeEffect) return;
+  if (!activeEffect || !shouldTrack) return;
 
   let despMap = bucket.get(target);
   if (!despMap) {
@@ -194,7 +194,21 @@ export const watch = (source, cb, options = {}) => {
 
 const arrarInstrumentations = {};
 
-["includes", "indexOf", "lastIndexOf"].forEach((method) => {
+let shouldTrack = true;
+
+["push", "pop", "shift", "unshift", "splice"].forEach((method) => {
+  const originMethod = Array.prototype[method];
+
+  arrarInstrumentations[method] = function (...args) {
+    shouldTrack = false;
+    let res = originMethod.apply(this, args);
+    shouldTrack = true;
+
+    return res;
+  };
+});
+
+[("includes", "indexOf", "lastIndexOf")].forEach((method) => {
   const originMethod = Array.prototype[method];
 
   arrarInstrumentations[method] = function (...args) {

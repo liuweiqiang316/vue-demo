@@ -14,12 +14,15 @@
 <script type="module">
   import { reactive, shallowReactive, readonly, shallowReadonly, effect, track, trigger, computed, watch, ITERATE_KEY, TriggerType } from "./src/main.js"
 
-  const obj = {}
-  const arr = reactive([1, obj])
+  const arr = reactive([])
 
-  console.log(arr.includes(obj))
-  console.log(arr.indexOf(obj))
-  console.log(arr.lastIndexOf(obj))
+  effect(() => {
+    arr.push(1)
+  })
+  effect(() => {
+    arr.push(1)
+  })
+
 </script>
 
 </html>
