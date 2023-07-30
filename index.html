@@ -14,14 +14,16 @@
 <script type="module">
   import { reactive, shallowReactive, readonly, shallowReadonly, effect, track, trigger, computed, watch, ITERATE_KEY, TriggerType } from "./src/main.js"
 
-  const arr = reactive(['foo'])
+  const arr = reactive([1, 2, 3, 4, 5])
 
   effect(() => {
-    console.log(arr.length)
+    for (const key of arr) {
+      console.log(key)
+    }
   })
 
-  arr[1] = 'bar'
-  arr[2] = 'bar2'
+  // arr[1] = 'bar'
+  arr.length = 6
 
 </script>
 

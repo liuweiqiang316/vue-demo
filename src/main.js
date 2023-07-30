@@ -198,7 +198,7 @@ const createReactive = (obj, isShallow = false, isReadonly = false) => {
       if (key === "raw") {
         return target;
       }
-      if (!isReadonly) {
+      if (!isReadonly && typeof key !== "symbol") {
         track(target, key);
       }
 
@@ -254,7 +254,8 @@ const createReactive = (obj, isShallow = false, isReadonly = false) => {
       return Reflect.has(target, key);
     },
     ownKeys(target) {
-      track(target, ITERATE_KEY);
+      // track(target, ITERATE_KEY);
+      track(target, Array.isArray(target) ? "length" : ITERATE_KEY);
       return Reflect.ownKeys(target);
     },
   });
