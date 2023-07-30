@@ -14,17 +14,12 @@
 <script type="module">
   import { reactive, shallowReactive, readonly, shallowReadonly, effect, track, trigger, computed, watch, ITERATE_KEY, TriggerType } from "./src/main.js"
 
-  const arr = reactive([1, 2, 3, 4, 5])
+  const obj = {}
+  const arr = reactive([1, obj])
 
-  effect(() => {
-    for (const key of arr) {
-      console.log(key)
-    }
-  })
-
-  // arr[1] = 'bar'
-  arr.length = 6
-
+  console.log(arr.includes(obj))
+  console.log(arr.indexOf(obj))
+  console.log(arr.lastIndexOf(obj))
 </script>
 
 </html>

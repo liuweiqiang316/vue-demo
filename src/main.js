@@ -192,12 +192,32 @@ export const watch = (source, cb, options = {}) => {
   }
 };
 
+const arrarInstrumentations = {};
+
+["includes", "indexOf", "lastIndexOf"].forEach((method) => {
+  const originMethod = Array.prototype[method];
+
+  arrarInstrumentations[method] = function (...args) {
+    let res = originMethod.apply(this, args);
+    if (res === false || res === -1) {
+      res = originMethod.apply(this.raw, args);
+    }
+
+    return res;
+  };
+});
+
 const createReactive = (obj, isShallow = false, isReadonly = false) => {
   return new Proxy(obj, {
     get(target, key, receiver) {
       if (key === "raw") {
         return target;
       }
+
+      if (Array.isArray(target) && arrarInstrumentations.hasOwnProperty(key)) {
+        return Reflect.get(arrarInstrumentations, key, receiver);
+      }
+
       if (!isReadonly && typeof key !== "symbol") {
         track(target, key);
       }
@@ -261,8 +281,16 @@ const createReactive = (obj, isShallow = false, isReadonly = false) => {
   });
 };
 
+const reactiveMap = new Map();
+
 export const reactive = (obj) => {
-  return createReactive(obj);
+  const existionProxy = reactiveMap.get(obj);
+  if (existionProxy) return existionProxy;
+
+  const proxy = createReactive(obj);
+  reactiveMap.set(obj, proxy);
+
+  return proxy;
 };
 
 export const shallowReactive = (obj) => {
