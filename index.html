@@ -14,14 +14,15 @@
 <script type="module">
   import { reactive, shallowReactive, readonly, shallowReadonly, effect, track, trigger, computed, watch, ITERATE_KEY, TriggerType } from "./src/main.js"
 
-  const obj = { foo: { bar: 1 } }
-  const obj2 = { foo: { bar: 1 } }
-  const r1 = readonly(obj)
-  const r2 = shallowReadonly(obj2)
+  const arr = reactive(['foo'])
 
-  r1.foo.bar = 2
-  r2.foo.bar = 2
-  console.log(r1, r2);
+  effect(() => {
+    console.log(arr.length)
+  })
+
+  arr[1] = 'bar'
+  arr[2] = 'bar2'
+
 </script>
 
 </html>

@@ -59,7 +59,7 @@ export const track = (target, key) => {
   activeEffect.deps.push(deps);
 };
 
-export const trigger = (target, key, type) => {
+export const trigger = (target, key, type, newVal) => {
   const despMap = bucket.get(target);
   if (!despMap) return;
 
@@ -73,6 +73,28 @@ export const trigger = (target, key, type) => {
         effectsToRun.add(effectFn);
       }
     });
+
+  if (type === TriggerType.ADD && Array.isArray(target)) {
+    const lengthEffects = despMap.get("length");
+    lengthEffects &&
+      lengthEffects.forEach((effectFn) => {
+        if (effectFn !== activeEffect) {
+          effectsToRun.add(effectFn);
+        }
+      });
+  }
+
+  if (Array.isArray(target) && key === "length") {
+    despMap.forEach((effects, key) => {
+      if (key >= newVal) {
+        effects.forEach((effecfn) => {
+          if (effecfn !== activeEffect) {
+            effectsToRun.add(effecfn);
+          }
+        });
+      }
+    });
+  }
 
   if (type === TriggerType.ADD || type === TriggerType.DELETE) {
     const iterateEffects = despMap.get(ITERATE_KEY);
@@ -195,15 +217,20 @@ const createReactive = (obj, isShallow = false, isReadonly = false) => {
         return true;
       }
       const oldVal = target[key];
-      const type = Object.prototype.hasOwnProperty.call(target, key)
+      const type = Array.isArray(target)
+        ? Number(key) < target.length
+          ? TriggerType.SET
+          : TriggerType.ADD
+        : Object.prototype.hasOwnProperty.call(target, key)
         ? TriggerType.SET
         : TriggerType.ADD;
+
       const res = Reflect.set(target, key, newVal, receiver);
 
       // target === receiver.raw 说明 receiver 就是 target 的代理对象
       if (target === receiver.raw) {
         if (oldVal !== newVal && (oldVal === oldVal || newVal === newVal)) {
-          trigger(target, key, type);
+          trigger(target, key, type, newVal);
         }
       }
 
