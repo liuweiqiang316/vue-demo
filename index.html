@@ -9,20 +9,8 @@
 </head>
 
 <body>
-  <div id="msg"></div>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
 </body>
-<script type="module">
-  import { reactive, shallowReactive, readonly, shallowReadonly, effect, track, trigger, computed, watch, ITERATE_KEY, TriggerType } from "./src/main.js"
-
-  const arr = reactive([])
-
-  effect(() => {
-    arr.push(1)
-  })
-  effect(() => {
-    arr.push(1)
-  })
-
-</script>
 
 </html>
